@@ -20,7 +20,7 @@
     },
     "extra": {
         "laravel": {
-            "providers": [
+            "dont-discover": [
                 "Haruncpi\\LaravelIdGenerator\\IdGeneratorServiceProvider"
             ]
         }
