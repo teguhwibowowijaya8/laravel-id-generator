@@ -52,19 +52,19 @@ class IdGenerator
         $tableFieldType = $type[0];
         preg_match("/(?<=\().+?(?=\))/", $fieldType, $tblFieldLength);
         $tableFieldLength = $tblFieldLength[0];
-
+        
         if (in_array($tableFieldType, ['int', 'bigint', 'numeric']) && !is_numeric($prefix)) {
             throw new Exception("table field type is $tableFieldType but prefix is string");
         }
-
+        
         if ($length > $tableFieldLength) {
             throw new Exception('ID length is bigger then field length');
         }
-
+        
         $prefixLength = strlen($configArr['prefix']);
         $idLength = $length - $prefixLength;
         $whereString = '';
-
+        
         if (array_key_exists('where', $configArr)) {
             $whereString .= " WHERE ";
             foreach ($configArr['where'] as $row) {
@@ -72,26 +72,26 @@ class IdGenerator
             }
         }
         $whereString = rtrim($whereString, 'AND ');
-
-
+        
+        
         $totalQuery = sprintf("SELECT count(%s) total FROM %s %s", $field, $configArr['table'], $whereString);
         $total = DB::select($totalQuery);
-
+        
         if ($total[0]->total) {
             if ($resetOnPrefixChange) {
                 $maxQuery = sprintf("SELECT MAX(%s) maxId from %s WHERE %s like %s", $field, $table, $field, "'" . $prefix . "%'");
             } else {
                 $maxQuery = sprintf("SELECT MAX(%s) maxId from %s", $field, $table);
             }
-
             $queryResult = DB::select($maxQuery);
-            $maxFullId = $queryResult[0]->maxId;
+            $maxFullId = $queryResult[0]->maxId ?? 0;
+            if (!$maxFullId) {
+                return $prefix . str_pad(1, $idLength, '0', STR_PAD_LEFT);
+            }
             
-            if(!$maxFullId) return $prefix . str_pad(1, $idLength, '0', STR_PAD_LEFT);
-
             $maxId = substr($maxFullId, $prefixLength, $idLength);
             return $prefix . str_pad($maxId + 1, $idLength, '0', STR_PAD_LEFT);
-
+            
         } else {
             return $prefix . str_pad(1, $idLength, '0', STR_PAD_LEFT);
         }
